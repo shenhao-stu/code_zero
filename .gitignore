@@ -1,0 +1,6 @@
+__pycache__
+.DS_Store
+secret.py
+outputs/
+datasets/other
+datasets/raw
