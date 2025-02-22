@@ -161,7 +161,7 @@ async def main_async(args):
 def main():
     parser = argparse.ArgumentParser(description='Process dataset using DeepSeek-R1')
     parser.add_argument('--model', type=str, default="deepseek-ai/DeepSeek-R1", help='Model name')
-    parser.add_argument('--input_file', type=str, default="datasets/raw/orz_math_57k_collected.json", help='Input file')
+    parser.add_argument('--input_file', type=str, default="datasets/raw/orz_math_57k_format.json", help='Input file')
     parser.add_argument('--batch_size', type=int, default=8, help='Batch size for concurrent processing')
     parser.add_argument('--is_reason', type=bool, default=True, help='Whether reasoning is needed')
     args = parser.parse_args()
