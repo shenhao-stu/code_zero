@@ -86,7 +86,7 @@ async def process_file_async(engine, input_file, output_file, batch_size=5, is_r
     gen_param = {
         "temperature": 0.6,
         "top_p": 0.8,
-        "max_tokens": 16384,
+        "max_tokens": 16384 if is_reason else 8192,
         "stream": True
     }
     
@@ -170,7 +170,7 @@ def main():
     parser.add_argument('--model', type=str, default="deepseek-ai/DeepSeek-R1", help='Model name')
     parser.add_argument('--input_file', type=str, default="datasets/raw/orz_math_57k_format.json", help='Input file')
     parser.add_argument('--batch_size', type=int, default=4, help='Batch size for concurrent processing')
-    parser.add_argument('--is_reason', type=bool, default=True, help='Whether reasoning is needed')
+    parser.add_argument('--is_reason', action='store_true', help='Whether reasoning is needed')
     args = parser.parse_args()
 
     asyncio.run(main_async(args))
