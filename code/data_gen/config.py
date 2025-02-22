@@ -89,7 +89,16 @@ def MODEL_request_by_API(engine, msg, gen_param, is_local=False, is_token_count 
             time.sleep(10)
             continue
     
-    return None
+    if is_token_count:
+        if is_reason:
+            return None, None, None, None
+        else:
+            return None, None, None
+    else:
+        if is_reason:
+            return None, None
+        else:
+            return None
 
 async def MODEL_request_by_API_async(engine, msg, gen_param, is_local=False, is_token_count=False, is_reason=False):
     retry = MAX_RETRY
@@ -168,7 +177,16 @@ async def MODEL_request_by_API_async(engine, msg, gen_param, is_local=False, is_
             await asyncio.sleep(10)
             continue
     
-    return None
+    if is_token_count:
+        if is_reason:
+            return None, None, None, None
+        else:
+            return None, None, None
+    else:
+        if is_reason:
+            return None, None
+        else:
+            return None
 
 def main():
     engine = "Qwen/Qwen2.5-72B-Instruct"
