@@ -5,7 +5,7 @@ from collections import defaultdict
 from modelscope.msdatasets import MsDataset
 from datasets import load_dataset
 
-def convert_limo_format_to_sharegpt(root_dir):
+def convert_jsonl_format_to_sharegpt(root_dir):
     """Convert LIMO dataset to ShareGPT format"""
     # Read input data
     input_path = os.path.join(root_dir, 'limo.jsonl')
@@ -26,6 +26,46 @@ def convert_limo_format_to_sharegpt(root_dir):
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(output_data, f, ensure_ascii=False, indent=2)
 
+def convert_sharegpt_to_jsonl_format(root_dir):
+    """Convert ShareGPT format to LIMO format
+    
+    Args:
+        root_dir: Root directory containing input and output files
+    """
+    # Read input data
+    input_path = os.path.join(root_dir, 'orz_math_57k.json')  # Change file extension
+    
+    # Load entire JSON file
+    with open(input_path, 'r', encoding='utf-8') as f:
+        conversations = json.load(f)  # Load complete JSON array
+    
+    output_data = []
+    for conversation in conversations:
+        # Each conversation should have exactly 2 messages
+        if len(conversation) != 2:
+            print(f"Conversation length: {len(conversation)}")
+            continue
+            
+        human_msg = conversation[0]
+        assistant_msg = conversation[1]
+        
+        # Extract required fields
+        if (human_msg.get('from') == 'human' and 
+            assistant_msg.get('from') == 'assistant' and
+            'ground_truth' in assistant_msg):
+            
+            item = {
+                'question': human_msg['value'],
+                'answer': assistant_msg['ground_truth']['value'],
+                'solution': ''  # Empty solution as specified
+            }
+            output_data.append(item)
+
+    # Write output
+    output_path = os.path.join(root_dir, 'orz_math_57k_format.jsonl')
+    with open(output_path, 'w', encoding='utf-8') as f:
+        for item in output_data:
+            f.write(json.dumps(item, ensure_ascii=False) + '\n')
 
 def convert_dataset_to_jsonl(src_file, tgt_file, dataset_type='modelscope', subset_name='default', split='test'):
     """Convert dataset to JSONL format
@@ -134,9 +174,9 @@ def filter_math_repos(input_file, output_file):
 
 
 if __name__ == '__main__':
-    root_dir = "data/raw"
-    convert_limo_format_to_sharegpt(root_dir)
-
+    root_dir = "datasets/raw"
+    # convert_jsonl_format_to_sharegpt(root_dir)
+    convert_sharegpt_to_jsonl_format(root_dir)
     # filter_math_repos("datasets/distill_r1_110k.jsonl", "datasets/distill_r1_math.jsonl")
 
     # convert_dataset_to_jsonl('datasets/raw/hkust-nlp___code_io-py_edu-reasoning', './datasets/code_io.jsonl', dataset_type='modelscope')

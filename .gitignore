@@ -2,5 +2,6 @@ __pycache__
 .DS_Store
 secret.py
 outputs/
+eval/
 datasets/other
 datasets/raw

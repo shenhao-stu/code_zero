@@ -33,6 +33,41 @@ def MODEL_request_by_API(engine, msg, gen_param, is_local=False, is_token_count 
                     ],
                 **gen_param
             )
+            
+            # Handle streaming response
+            if gen_param.get('stream', False):
+                full_content = ''
+                full_reasoning = ''
+                done_reasoning = False
+                
+                for chunk in response:
+                    if is_reason:
+                        # Processing for reasoning model
+                        reasoning_chunk = chunk.choices[0].delta.reasoning_content
+                        answer_chunk = chunk.choices[0].delta.content
+                        
+                        if reasoning_chunk:
+                            full_reasoning += reasoning_chunk
+                            print(reasoning_chunk, end='', flush=True)
+                        elif answer_chunk:
+                            if not done_reasoning:
+                                print('\n\n === Final Answer ===\n')
+                                done_reasoning = True
+                            full_content += answer_chunk
+                            print(answer_chunk, end='', flush=True)
+                    else:
+                        # Processing for non-reasoning model
+                        content = chunk.choices[0].delta.content
+                        if content:
+                            full_content += content
+                            print(content, end='', flush=True)
+                
+                if is_token_count:
+                    return (full_reasoning, full_content, 0, 0) if is_reason else (full_content, 0, 0)
+                else:
+                    return (full_reasoning, full_content) if is_reason else full_content
+            
+            # Handle non-streaming response
             inp_tokens = response.usage.prompt_tokens
             out_tokens = response.usage.completion_tokens
             if is_token_count:

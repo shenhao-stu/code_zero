@@ -86,7 +86,8 @@ async def process_file_async(engine, input_file, output_file, batch_size=5, is_r
     gen_param = {
         "temperature": 0.6,
         "top_p": 0.8,
-        "stream": False
+        "max_tokens": 16384,
+        "stream": True
     }
     
     current_batch = []
