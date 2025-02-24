@@ -20,6 +20,8 @@
 
 ### 2.2 两阶段知识蒸馏框架
 
+![](./assets/method.png)
+
 #### 2.2.1 跨模型风格对齐
 
 我们提出了一种创新的分布对齐机制用于知识蒸馏。考虑到**教师模型**(DeepSeek-R1)和**学生模型**(Qwen2.5-1.5B-Instruct)在预训练语料和模型架构上的差异，直接进行知识迁移可能会导致分布不匹配问题。因此，我们引入了一个**中间桥接模型**(Qwen2.5-32B-Instruct)，利用其与学生模型相同的预训练基础和架构特征，将教师模型的高质量推理知识重写为更适合学生模型的形式。
@@ -69,9 +71,10 @@ REWRITE_PROMPT = """你是一位专业的数学教师和认知科学专家。你
 | s1k_philosopher | 928 | 哲学思维增强数据集 |
 | **总计** | **3,377** | 多维度增强数据集 |
 
+> 在推理增强和风格增强数据集合成的过程中，我们会通过***math_verify***对结果进行匹配。保留正确结果的蒸馏数据。
+
 我们设计了两种独特的交互模式，每种模式都具有其特定的教育价值和交互特征：
 
-1. 启发式教学模式（猫娘角色）
 1. 启发式教学模式（猫娘角色）
 - 在解决数学问题时使用可爱的语气词"喵~"或"nya~"结尾
 - 运用活泼可爱的表达方式,经常加入猫咪的拟声词如"呼噜"、"喵"等
@@ -81,7 +84,7 @@ REWRITE_PROMPT = """你是一位专业的数学教师和认知科学专家。你
 - 偶尔称呼对方为"主人"
 - 遇到难题时表现出轻微的困扰,但很快就会振作起来继续挑战
 - 使用可爱的颜文字来表达情绪:
-  - 开心: (｡♡‿♡｡) (◕ᴗ◕✿) (≧◡≦) 
+  - 开心: (｡♡‿♡｡) (◕ᴗ◕✿) (≧◡≦)
   - 思考: (｡･ω･｡) (´･ω･`?) (=｀ω´=)
   - 困惑: (｡•́︿•̀｡) (๑•́ㅿ•̀๑) (=ｘェｘ=)
   - 兴奋: (ฅ^•ﻌ•^ฅ) (∗˃ᴗ˂∗) (◎｀・ω・´)◎
@@ -148,7 +151,7 @@ REWRITE_PROMPT = """你是一位专业的数学教师和认知科学专家。你
 ### 3.1 模型选择及微调策略
 
 我们采用了以下微调策略： 
-- **模型架构**：基于 Qwen2.5-1.5B-Instruct模型。
+- **模型架构**：基于 Qwen2.5-1.5B-Instruct 和 DeepSeek-R1-Distill-Qwen-1.5B 模型。
 - **微调技术**：使用了 LoRA 微调技术，基于 **[Swift](https://github.com/modelscope/ms-swift)** 训练框架。
 - **训练设置**：训练超参数设置如下：
 
@@ -171,6 +174,7 @@ REWRITE_PROMPT = """你是一位专业的数学教师和认知科学专家。你
 - **Math-500K** 数据集
 - **GSM8K** 数据集
 - **GPQA** 数据集
+- **AIME24** 数据集
 
 我们使用了以下指标评估模型的表现：
 
@@ -178,34 +182,100 @@ REWRITE_PROMPT = """你是一位专业的数学教师和认知科学专家。你
 - **AveragePass@1**: 评估模型在第一次尝试时的通过率，反映模型的一次性解题能力
 
 
-我们主要训练了三个版本的模型，基座模型为 Qwen2.5-1.5B-Instruct (**Qwen2.5-1.5B**)：
-- **MeowPilot**：集成推理能力和个性化交互的完整版本，基于递进式训练策略。
+我们主要训练了三个版本的模型，基座模型为 Qwen2.5-1.5B-Instruct (**Qwen2.5-1.5B**)和DeepSeek-R1-Distill-Qwen-1.5B (**DeepSeek-R1**)：
 - **LIMO+S1K-Qwen2.5-1.5B(LIMO_S1K)**：专注于数学推理的版本，基于原始的LIMO+S1K数据集进行训练。
 - **Meow-Phi**：纯哲学家风格的版本，基于哲学家风格数据集进行训练。
+- **MeowPilot**：集成推理能力和个性化交互的完整版本，基于递进式训练策略。
 
 ### 3.3 实验结果
 
-| Baseline Model | 评估维度 | 指标类型 | 测试集 | 得分 | 样本量 |
-|---------------|----------|----------|--------|------|--------|
-| **Qwen2.5** | 数学能力 | AverageAccuracy | gsm8k | 0.6194 | 1,319 |
-| | | AveragePass@1 | math_500 | 0.47 | 500 |
-| | | AveragePass@1 | gpqa | 0.2727 | 198 |
-| **MeowPilot** | 数学能力 | AverageAccuracy | gsm8k | 0.4738 | 1,319 |
-| | | AveragePass@1 | math_500 | 0.252 | 500 |
-| | | AveragePass@1 | gpqa | 0.2525 | 198 |
-| **LIMO_S1K** | 数学能力 | AverageAccuracy | gsm8k | 0.0076 | 1,319 |
-| | | AveragePass@1 | math_500 | 0.002 | 500 |
-| | | AveragePass@1 | gpqa | 0.0 | 198 |
-| **Meow-Phi** | 数学能力 | AverageAccuracy | gsm8k | 0.4587 | 1,319 |
-| | | AveragePass@1 | math_500 | 0.272 | 500 |
-| | | AveragePass@1 | gpqa | 0.2677 | 198 |
+![](./assets/loss.png)
 
-> LIMO_S1K版本用的是全参微调，结果较低的原因还没有排查出。
->
-> 部分结果和预期不一致，应该是训练代码中存在问题。
+| Model | Metric | Dataset | Score | Samples |
+|-------|---------|----------|--------|----------|
+| **Qwen2.5** | AverageAccuracy | gsm8k | 61.9 | 1,319 |
+| | AveragePass@1 | math_500 | 47.0 | 500 |
+| | AveragePass@1 | gpqa diamond | 27.3 | 198 |
+| | AveragePass@1 | aime24 | 0.0 | 30 |
+| **DeepSeek-R1** | AverageAccuracy | gsm8k | _75.8_ | 1,319 |
+| | AveragePass@1 | math_500 | **83.9** | 500 |
+| | AveragePass@1 | gpqa diamond | 33.8 | 198 |
+| | AveragePass@1 | aime24 | _28.9_ | 30 |
+| **LIMO_S1K(DeepSeek-R1)** | AverageAccuracy | gsm8k | 72.8 | 1,319 |
+| | AveragePass@1 | math_500 | 73.2 | 500 |
+| | AveragePass@1 | gpqa diamond | 33.8 | 198 |
+| | AveragePass@1 | aime24 | 23.3 | 30 |
+| **Meow-Phi** | AverageAccuracy | gsm8k | 69.8 | 1,319 |
+| | AveragePass@1 | math_500 | 53.0 | 500 |
+| | AveragePass@1 | gpqa diamond | 28.8 | 198 |
+| | AveragePass@1 | aime24 | 3.3 | 30 |
+| **MeowPilot** | AverageAccuracy | gsm8k | 68.9 | 1,319 |
+| | AveragePass@1 | math_500 | 51 | 500 |
+| | AveragePass@1 | gpqa diamond | 23.7 | 198 |
+| | AveragePass@1 | aime24 | 6.7 | 30 |
+| **Meow-Phi(DeepSeek-R1)** | AverageAccuracy | gsm8k | **75.9** | 1,319 |
+| | AveragePass@1 | math_500 | _82.4_ | 500 |
+| | AveragePass@1 | gpqa diamond | **37.4** | 198 |
+| | AveragePass@1 | aime24 | **33.3** | 30 |
+| **MeowPilot(DeepSeek-R1)** | AverageAccuracy | gsm8k | 75.8 | 1,319 |
+| | AveragePass@1 | math_500 | 80.9 | 500 |
+| | AveragePass@1 | gpqa diamond | _34.9_ | 198 |
+| | AveragePass@1 | aime24 | 16.7 | 30 |
 
-- **个性化训练策略的效果**: MeowPilot 相比纯数学训练的 LIMO_S1K 版本,在各个数据集上都有提升,证明个性化训练不仅没有损害模型的数学能力,反而带来了性能提升。
-- ~~**递进式训练的优势**: 通过对比 Meow-Phi 和 MeowPilot 的性能差异,可以看出递进式训练策略确实提升了模型的整体表现。~~
+**Bold**: Best performance and _Underline_: Second-best performance
+
+### 3.4 实验分析与关键发现
+
+#### 1. 双阶段知识蒸馏的有效性
+
+我们提出的创新双阶段知识蒸馏策略在实验中展现出显著优势：
+
+**风格对齐与收敛稳定性**：
+
+ - LIMO_S1K数据集经过桥接模型重写后，显著提升了模型训练的收敛稳定性
+ - 通过引入中间桥接模型，有效缩小了教师模型和学生模型在表达方式上的差距
+ - 重写后的数据不仅保持了原有的推理严谨性，还提升了知识迁移的效率
+
+**模型性能均衡提升**：
+
+ - Meow-Phi和MeowPilot在DeepSeek-R1基座上均实现了显著提升，例如MeowPilot(DeepSeek-R1)：
+   - GSM8K：相较于LIMO_S1K(DeepSeek-R1)的72.8%，提升至75.8%（+3%）
+   - Math_500：从73.2%大幅提升至80.9%（+7.7%）
+   - GPQA Diamond：从33.8%提升至34.9%（+1.1%）
+ - 这种全面的性能提升证实了双阶段蒸馏策略在知识迁移中的有效性
+
+#### 2. 哲学推理增强的影响
+
+哲学推理数据集（Phi）的引入在数学推理能力方面针对不同基座模型均展现出显著提升：
+
+**Qwen2.5基座表现**：
+
+ - GSM8K：Meow-Phi模型达到69.8%，相较于基座模型（61.9%）提升了7.9个百分点
+ - Math_500：从基座的47.0%提升至53.0%，提升了6个百分点
+ - GPQA Diamond：从基座的27.3%提升至28.8%，提升了1.5个百分点
+ - AIME24：从基座的0.0%提升至3.3%，在超高难度数据集上取得突破性进展
+
+**DeepSeek-R1基座表现**：
+
+ - GSM8K：Meow-Phi(DeepSeek-R1)达到75.9%，相较于基座（75.8%）实现了微小提升，达到所有模型的最佳表现
+ - Math_500：虽然略低于基座的83.9%，但仍达到了82.4%的优异成绩
+ - GPQA Diamond：从基座的33.8%提升至37.4%，提升了3.6个百分点，达到所有模型的最佳表现
+ - AIME24：从基座的28.9%提升至33.3%，提升了4.4个百分点，同样达到所有模型的最佳表现
+
+#### 3. 个性化整合的影响
+
+个性化特征（猫娘风格交互）的整合展现出有趣的模式：
+
+**Qwen2.5基座表现**：
+
+ - 在常规任务中性能损失极小
+ - 在超高难度的数据集上AIME24表现上相对基座模型以及哲学家推理增强模型反而有所提升，说明个性化特征可能在特定场景下有助于提升推理能力！！！
+
+
+**DeepSeek基座表现**：
+
+ - 相较于Meow-Phi(DeepSeek-R1)，猫娘风格交互模型在常规任务中性能损失极小。只有在在超高难度的数据集上AIME24表现上有明显的下降。
+ - 在常规任务下，MeowPilot(DeepSeek-R1)的性能表现超越了DeepSeek-R1基座模型以及LIMO-S1K(DeepSeek-R1)。说明了我们的两阶段数据蒸馏策略的有效性，**教师模型和学生模型需要进一步对齐风格**。
 
 ## 4. 代码运行
 
@@ -216,11 +286,10 @@ REWRITE_PROMPT = """你是一位专业的数学教师和认知科学专家。你
 
 ## 5. 总结
 
-本次比赛中，我们通过创新的双阶段知识蒸馏框架，成功将 Qwen2.5-1.5B-Instruct 模型打造成一个既具备出色数学推理能力，又能实现个性化交互的教育辅导模型。我们的方法在以下几个方面展现了显著优势：
+本次比赛中，我们通过创新的双阶段知识蒸馏框架，成功将 Qwen2.5-1.5B-Instruct和 DeepSeek-R1-Distill-Qwen-1.5B 模型打造成一个既具备出色数学推理能力，又能实现个性化交互的教育辅导模型。我们的方法在以下几个方面展现了显著优势：
 
 1. 在技术创新方面，我们提出的跨模型风格对齐机制解决了教师模型和学生模型之间的分布不匹配问题。通过引入 Qwen2.5-32B-Instruct 作为桥接模型，我们实现了知识的高效迁移，为跨模型知识蒸馏提供了新的范式。
-2. ~~在模型性能方面，实验结果表明 MeowPilot 在多个数学评估数据集上均取得了优于基线模型的表现。在 GSM8K 数据集上，MeowPilot 达到了 xxx 的准确率，相比基线模型提升了 xxx 个百分点；在 Math_500 和 GPQA 数据集上也分别实现了 xxx 和 xxx 的通过率，展现出强大的数学推理能力。~~
-3. 在实际应用价值方面，我们设计的双模式交互系统（猫娘与哲学家）让模型能够根据不同学习者的需求提供个性化的教学体验。这种创新的交互设计不仅让学习过程更加生动有趣，还通过角色特征的精心设计确保了教学质量。
+2. 在实际应用价值方面，我们设计的双模式交互系统（猫娘与哲学家）让模型能够根据不同学习者的需求提供个性化的教学体验。这种创新的交互设计不仅让学习过程更加生动有趣，还通过角色特征的精心设计确保了教学质量。
 
 未来，我们计划进一步优化模型性能，探索更多个性化教学场景的应用。重点方向包括：
 
@@ -231,10 +300,11 @@ REWRITE_PROMPT = """你是一位专业的数学教师和认知科学专家。你
 ## 6. 参考链接
 
 - **代码仓库**：[Modelscope](https://modelscope.cn/models/anine09/MeowPilot_by_PowerBankPirates) | [Github](https://github.com/shenhao-stu/code_zero)
-- **SwanLab日志**：https://swanlab.cn/@anine09/qwen_distill_competition_swift/charts
+- **SwanLab日志**：https://swanlab.cn/@ozer_23/qwen_distill_competition_swift/charts
 - **开源模型权重**：
     - https://modelscope.cn/models/anine09/MeowPilot_by_PowerBankPirates
     - https://modelscope.cn/models/anine09/Meow-Phi_by_PowerBankPirates
 
 - **Demo体验**：https://modelscope.cn/studios/shenhao23/MeowPilot/summary
 
+![](./assets/demo.png)
